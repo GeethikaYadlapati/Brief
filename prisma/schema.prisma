@@ -1,0 +1,154 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgvector(map: "vector")]
+}
+
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users     User[]
+  sources   Source[]
+  questions Question[]
+}
+
+model User {
+  id          String   @id @default(cuid())
+  clerkId     String   @unique
+  email       String   @unique
+  name        String?
+  role        UserRole @default(HIRE)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  questions    Question[]
+  humanAnswers HumanAnswer[]
+}
+
+enum UserRole {
+  ADMIN
+  HIRE
+}
+
+model Source {
+  id         String     @id @default(cuid())
+  title      String
+  type       SourceType
+  rawContent String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  chunks Chunk[]
+}
+
+enum SourceType {
+  DOCUMENT
+  SLACK_EXPORT
+  MANUAL_QA
+}
+
+model Chunk {
+  id         String                     @id @default(cuid())
+  content    String
+  embedding  Unsupported("vector(1536)")?
+  chunkIndex Int
+  createdAt  DateTime                   @default(now())
+
+  sourceId String
+  source   Source @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  citedIn AnswerCitation[]
+}
+
+model Question {
+  id        String         @id @default(cuid())
+  content   String
+  status    QuestionStatus @default(PENDING)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  askedById String
+  askedBy   User   @relation(fields: [askedById], references: [id])
+
+  answer Answer?
+  gap    Gap?
+}
+
+enum QuestionStatus {
+  PENDING
+  ANSWERED
+  FLAGGED
+  RESOLVED
+}
+
+model Answer {
+  id              String   @id @default(cuid())
+  content         String
+  confidenceScore Float
+  createdAt       DateTime @default(now())
+
+  questionId String   @unique
+  question   Question @relation(fields: [questionId], references: [id])
+
+  citations AnswerCitation[]
+}
+
+model AnswerCitation {
+  id       String @id @default(cuid())
+  answerId String
+  chunkId  String
+
+  answer Answer @relation(fields: [answerId], references: [id])
+  chunk  Chunk  @relation(fields: [chunkId], references: [id])
+
+  @@unique([answerId, chunkId])
+}
+
+model Gap {
+  id         String    @id @default(cuid())
+  createdAt  DateTime  @default(now())
+  resolvedAt DateTime?
+
+  questionId String   @unique
+  question   Question @relation(fields: [questionId], references: [id])
+
+  humanAnswer HumanAnswer?
+}
+
+model HumanAnswer {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+
+  gapId String @unique
+  gap   Gap    @relation(fields: [gapId], references: [id])
+
+  answeredById     String
+  answeredBy       User   @relation(fields: [answeredById], references: [id])
+
+  promotedSourceId String?
+}
