@@ -1,26 +1,25 @@
-import { ClerkProvider, UserButton, Show } from "@clerk/nextjs";
-import { SignInButton } from "@clerk/nextjs";
+import { ClerkProvider } from "@clerk/nextjs";
 import Sidebar from "@/components/Sidebar";
 import "./globals.css";
+import { auth } from "@clerk/nextjs/server";
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const { userId } = await auth()
+
   return (
     <html lang="en">
       <body>
         <ClerkProvider>
-          <Show when="signed-out">
-            <div className="flex items-center justify-center min-h-screen">
-              <SignInButton />
-            </div>
-          </Show>
-          <Show when="signed-in">
-            <div className="flex min-h-screen">
+          {userId ? (
+            <div style={{ display: 'flex', minHeight: '100vh' }}>
               <Sidebar />
-              <main className="flex-1 p-6 bg-white">
+              <main style={{ flex: 1, background: 'white' }}>
                 {children}
               </main>
             </div>
-          </Show>
+          ) : (
+            <>{children}</>
+          )}
         </ClerkProvider>
       </body>
     </html>
