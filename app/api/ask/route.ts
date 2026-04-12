@@ -50,33 +50,40 @@ console.log('Chunks with distances:', chunks.map(c => ({
     distance: c.distance, 
     content: c.content.substring(0, 50) 
   })))
+  
+const bestDistance = chunks[0]?.distance ?? 999
+const worstDistance = chunks[chunks.length - 1]?.distance ?? 999
+const spread = worstDistance - bestDistance
 
-const CONFIDENCE_THRESHOLD = 0.8
+// If even the best match is too far, flag regardless
+const ABSOLUTE_CEILING = 1.3
+
+if (bestDistance > ABSOLUTE_CEILING) {
+  const savedQuestion = await prisma.question.create({
+    data: {
+      content: question,
+      status: 'FLAGGED',
+      workspaceId: user.workspaceId,
+      askedById: user.id
+    }
+  })
+
+  await prisma.gap.create({
+    data: { questionId: savedQuestion.id }
+  })
+
+  return NextResponse.json({ 
+    answer: null,
+    flagged: true,
+    message: 'No relevant context found'
+  })
+}
+
+const CONFIDENCE_THRESHOLD = spread < 0.1
+  ? bestDistance + 0.15
+  : bestDistance + 0.05
 
 const relevantChunks = chunks.filter(chunk => chunk.distance < CONFIDENCE_THRESHOLD)
-
-  if (relevantChunks.length === 0) {
-    const savedQuestion = await prisma.question.create({
-      data: {
-        content: question,
-        status: 'FLAGGED',
-        workspaceId: user.workspaceId,
-        askedById: user.id
-      }
-    })
-  
-    await prisma.gap.create({
-      data: {
-        questionId: savedQuestion.id
-      }
-    })
-  
-    return NextResponse.json({ 
-      answer: null,
-      flagged: true,
-      message: 'No relevant context found'
-    })
-  }
 
   const context = relevantChunks
     .map((chunk, i) => `Source ${i + 1}: ${chunk.content}`)
