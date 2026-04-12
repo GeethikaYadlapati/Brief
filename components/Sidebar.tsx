@@ -12,11 +12,19 @@ export default function Sidebar() {
   const isAdmin = user?.publicMetadata?.role === 'ADMIN'
 
   useEffect(() => {
-    if (isAdmin) {
+    if (!isAdmin) return
+
+    const fetchGapCount = () => {
       fetch('/api/gaps')
         .then(res => res.json())
-        .then(data => setGapCount(data.gaps?.length || 0)) //removed gapCount from {navItem('/gaps', 'Gaps to fill', '#EF9F27')} it was in last place
+        .then(data => setGapCount(data.gaps?.length || 0))
     }
+
+    fetchGapCount()
+
+    const interval = setInterval(fetchGapCount, 60000)
+
+    return () => clearInterval(interval)
   }, [isAdmin])
 
   const navItem = (
@@ -83,8 +91,22 @@ export default function Sidebar() {
         borderBottom: '0.5px solid rgba(0,0,0,0.1)',
         marginBottom: '8px'
       }}>
-        <div style={{ fontSize: '16px', fontWeight: '500', color: '#171717' }}>Brief</div>
-        <div style={{ fontSize: '12px', color: '#888780', marginTop: '2px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+          <div style={{
+            width: '24px',
+            height: '24px',
+            background: '#534AB7',
+            borderRadius: '6px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            <span style={{ color: 'white', fontSize: '12px', fontWeight: '600' }}>B</span>
+          </div>
+          <span style={{ fontSize: '16px', fontWeight: '500', color: '#171717' }}>Brief</span>
+        </div>
+        <div style={{ fontSize: '12px', color: '#888780' }}>
           {user?.firstName ? `${user.firstName}'s workspace` : 'My workspace'}
         </div>
       </div>
