@@ -12,29 +12,36 @@ export default async function Home() {
   return (
     <>
       <style>{`
-        @keyframes typing {
-          from { width: 0 }
-          to { width: 100% }
-        }
-        @keyframes blink {
-          0%, 100% { border-color: #534AB7 }
-          50% { border-color: transparent }
-        }
-        .typing-line {
-          overflow: hidden;
-          white-space: nowrap;
-          border-right: 2px solid #534AB7;
-          animation: typing 1.5s steps(30) forwards, blink 0.7s step-end infinite;
-          width: 0;
-        }
-        .typing-line-2 {
-          overflow: hidden;
-          white-space: nowrap;
-          border-right: 2px solid #534AB7;
-          animation: typing 1.5s steps(30) 1.6s forwards, blink 0.7s step-end 1.6s infinite;
-          width: 0;
-        }
-      `}</style>
+  @keyframes typing {
+    from { width: 0 }
+    to { width: 100% }
+  }
+  @keyframes typing2 {
+    from { width: 0 }
+    to { width: 100% }
+  }
+  @keyframes blink {
+    0%, 100% { border-color: #534AB7 }
+    50% { border-color: transparent }
+  }
+  @keyframes removeCursor {
+    to { border-color: transparent }
+  }
+  .typing-line {
+    overflow: hidden;
+    white-space: nowrap;
+    border-right: 2px solid #534AB7;
+    animation: typing 1.5s steps(30) forwards, removeCursor 0s 1.5s forwards;
+    width: 0;
+  }
+  .typing-line-2 {
+    overflow: hidden;
+    white-space: nowrap;
+    border-right: 2px solid #534AB7;
+    animation: typing2 1.5s steps(30) 1.6s forwards, blink 0.7s step-end 1.6s infinite;
+    width: 0;
+  }
+`}</style>
 
       <div style={{
         minHeight: '100vh',
