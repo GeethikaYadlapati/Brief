@@ -50,7 +50,7 @@ console.log('Chunks with distances:', chunks.map(c => ({
     distance: c.distance, 
     content: c.content.substring(0, 50) 
   })))
-  
+
 const bestDistance = chunks[0]?.distance ?? 999
 const worstDistance = chunks[chunks.length - 1]?.distance ?? 999
 const spread = worstDistance - bestDistance
@@ -89,56 +89,93 @@ const relevantChunks = chunks.filter(chunk => chunk.distance < CONFIDENCE_THRESH
     .map((chunk, i) => `Source ${i + 1}: ${chunk.content}`)
     .join('\n\n')
 
-  const prompt = `You are a helpful onboarding assistant for a startup team.
-  
-Answer the following question using ONLY the context provided below. 
-If the answer is not in the context, say "I don't have enough information to answer this confidently."
+    const prompt = `You are a helpful onboarding assistant for a startup team.
 
-Context:
-${context}
-
-Question: ${question}
-
-Answer:`
-
-  const completion = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [{ role: 'user', content: prompt }],
-    temperature: 0.3
-  })
-
-  const answer = completion.choices[0].message.content
-
-  const savedQuestion = await prisma.question.create({
-    data: {
-      content: question,
-      status: 'ANSWERED',
-      workspaceId: user.workspaceId,
-      askedById: user.id
+    Answer the following question using ONLY the context provided below.
+    If the context does not contain enough information to answer confidently, set confident to false.
+    
+    Respond in this exact JSON format:
+    {
+      "confident": true or false,
+      "confidence": 0.0 to 1.0 (how confident you are, only if confident is true),
+      "answer": "your answer here (only if confident is true, otherwise null)"
     }
-  })
-
-  const savedAnswer = await prisma.answer.create({
-    data: {
-      content: answer || '',
-      confidenceScore: 0.8,
-      questionId: savedQuestion.id
+    
+    Context:
+    ${context}
+    
+    Question: ${question}`
+    
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.3
+    })
+    
+    const raw = completion.choices[0].message.content || ''
+    
+    let parsed: { confident: boolean; confidence?: number; answer?: string }
+    
+    try {
+      parsed = JSON.parse(raw.replace(/```json|```/g, '').trim())
+    } catch {
+      parsed = { confident: false }
     }
-  })
-  
-  // Save citations
-  for (const chunk of relevantChunks) {
-    await prisma.answerCitation.create({
+    
+    if (!parsed.confident || !parsed.answer) {
+      const savedQuestion = await prisma.question.create({
+        data: {
+          content: question,
+          status: 'FLAGGED',
+          workspaceId: user.workspaceId,
+          askedById: user.id
+        }
+      })
+    
+      await prisma.gap.create({
+        data: { questionId: savedQuestion.id }
+      })
+    
+      return NextResponse.json({
+        answer: null,
+        flagged: true,
+        message: 'No relevant context found'
+      })
+    }
+    
+    const answer = parsed.answer
+    const confidenceScore = parsed.confidence ?? 0.5
+    
+    const savedQuestion = await prisma.question.create({
       data: {
-        answerId: savedAnswer.id,
-        chunkId: chunk.id
+        content: question,
+        status: 'ANSWERED',
+        workspaceId: user.workspaceId,
+        askedById: user.id
       }
     })
-  }
-
-  return NextResponse.json({
-    answer,
-    flagged: false,
-    sources: relevantChunks.map(c => c.sourceId)
-  })
+    
+    const savedAnswer = await prisma.answer.create({
+      data: {
+        content: answer,
+        confidenceScore,
+        questionId: savedQuestion.id
+      }
+    })
+    
+    for (const chunk of relevantChunks) {
+      await prisma.answerCitation.create({
+        data: {
+          answerId: savedAnswer.id,
+          chunkId: chunk.id
+        }
+      })
+    }
+    
+    return NextResponse.json({
+      answer,
+      confidenceScore,
+      flagged: false,
+      sources: relevantChunks.map(c => c.sourceId)
+    })
 }
