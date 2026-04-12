@@ -27,6 +27,10 @@ export default async function Home() {
   @keyframes removeCursor {
     to { border-color: transparent }
   }
+  @keyframes showCursor {
+    from { border-color: transparent }
+    to { border-color: #534AB7 }
+  }
   .typing-line {
     overflow: hidden;
     white-space: nowrap;
@@ -37,8 +41,8 @@ export default async function Home() {
   .typing-line-2 {
     overflow: hidden;
     white-space: nowrap;
-    border-right: 2px solid #534AB7;
-    animation: typing2 1.5s steps(30) 1.6s forwards, blink 0.7s step-end 1.6s infinite;
+    border-right: 2px solid transparent;
+    animation: typing2 1.5s steps(30) 1.6s forwards, showCursor 0s 1.6s forwards, blink 0.7s step-end 1.6s infinite;
     width: 0;
   }
 `}</style>
