@@ -6,6 +6,7 @@
 >
 > Every startup has these questions. Most have no good answers.
 > Brief fixes that.
+<img width="1997" height="966" alt="image" src="https://github.com/user-attachments/assets/fda968d3-1f7c-45a6-b12d-f244c8af0f7e" />
 
 **[Live Demo](https://brief-cyan.vercel.app)** · Built by [Geethika Yadlapati](https://github.com/GeethikaYadlapati)
 
@@ -18,6 +19,7 @@ Brief is an AI-powered onboarding assistant that answers new hire questions usin
 Upload your docs once. Brief semantically searches them when someone asks a question, generates a grounded answer with citations, and — when it can't answer confidently — flags the gap for the team to fill. Every human answer gets ingested back into the knowledge base automatically, so Brief gets smarter with every question it fails to answer.
 
 **The core insight:** Knowledge bases fail because nobody writes in them. Brief grows from questions, not documentation.
+<img width="2036" height="951" alt="image" src="https://github.com/user-attachments/assets/1d997375-0aaa-47d3-86f0-8748b4482388" />
 
 ---
 
