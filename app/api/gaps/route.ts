@@ -94,7 +94,7 @@ export async function POST(req: Request) {
   const source = await prisma.source.create({
     data: {
       title: `Q: ${gap.question.content}`,
-      rawContent: content,
+      rawContent: `Q: ${gap.question.content}\nA: ${content}`,
       type: 'MANUAL_QA',
       workspaceId: user.workspaceId
     }
