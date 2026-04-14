@@ -1,7 +1,27 @@
 import Link from 'next/link'
 import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
+import type { Metadata } from 'next'
 
+export const metadata: Metadata = {
+  title: 'Brief — Your team\'s memory, on demand',
+  description: 'Brief answers new hire questions instantly using your team\'s actual docs and decisions — and learns from every gap it can\'t fill.',
+  openGraph: {
+    title: 'Brief — Your team\'s memory, on demand',
+    description: 'Brief answers new hire questions instantly using your team\'s actual docs and decisions — and learns from every gap it can\'t fill.',
+    url: 'https://brief-cyan.vercel.app',
+    siteName: 'Brief',
+    type: 'website',
+    images: [
+      {
+        url: 'https://brief-cyan.vercel.app/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'Brief — Your team\'s memory, on demand'
+      }
+    ]
+  },
+}
 export default async function Home() {
   const { userId } = await auth()
 
